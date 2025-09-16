@@ -1,12 +1,14 @@
-// Currency formatting
+// Currency formatting untuk Artivity Printing Company
 export function formatCurrency(
     amount: number,
-    currency: string = 'USD',
-    locale: string = 'en-US'
+    currency: string = 'IDR',
+    locale: string = 'id-ID'
 ): string {
     return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     }).format(amount)
 }
 

@@ -16,7 +16,7 @@ export interface RequestConfig {
 }
 
 // API Client Class
-export class ApiClient {
+export class BaseApiService {
     private baseURL: string
     private defaultHeaders: Record<string, string>
 
@@ -136,4 +136,4 @@ export class ApiError extends Error {
 }
 
 // Default API client instance
-export const apiClient = new ApiClient()
+export const apiClient = new BaseApiService()

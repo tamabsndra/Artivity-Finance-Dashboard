@@ -20,7 +20,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { Asset } from "../types"
+import { useAssets, useAssetSummary, useAssetCategories } from "@/hooks/useAssets"
+import type { Asset } from "@/types/financial"
 
 // Format currency to IDR
 const formatIDR = (amount: number) => {
@@ -33,118 +34,14 @@ const formatIDR = (amount: number) => {
 }
 
 export function AssetManagement() {
-  const [assets, setAssets] = useState<Asset[]>([
-    {
-      id: 1,
-      name: "Mesin Printer Digital Epson SureColor F570",
-      category: "Peralatan Cetak",
-      purchase_date: "2023-01-15",
-      cost: 125000000,
-      depreciation_rate: 20,
-      lifetime_years: 5,
-      description: "Printer sublimasi untuk cetak kaos dan merchandise, kapasitas A2+",
-      current_value: 100000000,
-    },
-    {
-      id: 2,
-      name: "Workstation Desain Adobe Creative Suite",
-      category: "Peralatan Komputer",
-      purchase_date: "2023-06-01",
-      cost: 35000000,
-      depreciation_rate: 25,
-      lifetime_years: 4,
-      description: "PC high-end untuk desain grafis: i7-13700K, RTX 4070, 32GB RAM",
-      current_value: 26250000,
-    },
-    {
-      id: 3,
-      name: "Mesin Cutting Sticker Silhouette Cameo 4",
-      category: "Peralatan Cetak",
-      purchase_date: "2023-03-10",
-      cost: 12500000,
-      depreciation_rate: 15,
-      lifetime_years: 6,
-      description: "Mesin cutting untuk sticker, vinyl, dan heat transfer vinyl",
-      current_value: 10625000,
-    },
-    {
-      id: 4,
-      name: "Heat Press Machine 40x60cm",
-      category: "Peralatan Konveksi",
-      purchase_date: "2023-08-20",
-      cost: 18000000,
-      depreciation_rate: 18,
-      lifetime_years: 5,
-      description: "Mesin press pneumatic untuk transfer printing pada kaos dan tekstil",
-      current_value: 15300000,
-    },
-    {
-      id: 5,
-      name: "Meja Potong Kain Industrial 3x2m",
-      category: "Furniture Produksi",
-      purchase_date: "2023-02-15",
-      cost: 8500000,
-      depreciation_rate: 10,
-      lifetime_years: 10,
-      description: "Meja potong kain ukuran besar dengan penggaris built-in",
-      current_value: 7650000,
-    },
-    {
-      id: 6,
-      name: "Printer Large Format Canon imagePROGRAF",
-      category: "Peralatan Cetak",
-      purchase_date: "2022-11-20",
-      cost: 85000000,
-      depreciation_rate: 22,
-      lifetime_years: 5,
-      description: "Printer large format untuk banner, poster, dan signage A0+",
-      current_value: 59500000,
-    },
-    {
-      id: 7,
-      name: "Mesin Jahit Industrial Brother",
-      category: "Peralatan Konveksi",
-      purchase_date: "2023-04-05",
-      cost: 15000000,
-      depreciation_rate: 16,
-      lifetime_years: 7,
-      description: "Mesin jahit industrial untuk produksi seragam dan konveksi",
-      current_value: 12600000,
-    },
-    {
-      id: 8,
-      name: "Laminating Machine A1",
-      category: "Peralatan Cetak",
-      purchase_date: "2023-07-12",
-      cost: 22000000,
-      depreciation_rate: 20,
-      lifetime_years: 6,
-      description: "Mesin laminating untuk finishing produk cetak premium",
-      current_value: 18700000,
-    },
-    {
-      id: 9,
-      name: "Kompressor Angin 2HP",
-      category: "Peralatan Konveksi",
-      purchase_date: "2023-05-18",
-      cost: 6500000,
-      depreciation_rate: 12,
-      lifetime_years: 8,
-      description: "Kompressor untuk pneumatic heat press dan peralatan produksi",
-      current_value: 5850000,
-    },
-    {
-      id: 10,
-      name: "Software Adobe Creative Cloud Team",
-      category: "Software",
-      purchase_date: "2024-01-01",
-      cost: 8400000,
-      depreciation_rate: 100,
-      lifetime_years: 1,
-      description: "Lisensi Adobe CC untuk 5 user (annual subscription)",
-      current_value: 6300000,
-    },
-  ])
+  // Use hooks for data management
+  const { assets, loading, error, createAsset, updateAsset, deleteAsset } = useAssets({
+    page: 1,
+    limit: 50
+  })
+
+  const { summary, loading: summaryLoading } = useAssetSummary()
+  const { categories, loading: categoriesLoading } = useAssetCategories()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
@@ -166,28 +63,29 @@ export function AssetManagement() {
     return Math.max(0, asset.cost - depreciation)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const newAsset: Asset = {
-      id: editingAsset?.id || Date.now(),
-      name: formData.name,
-      category: formData.category,
-      purchase_date: formData.purchase_date,
-      cost: Number.parseFloat(formData.cost),
-      depreciation_rate: Number.parseFloat(formData.depreciation_rate),
-      lifetime_years: Number.parseInt(formData.lifetime_years),
-      description: formData.description,
+    try {
+      const assetData = {
+        name: formData.name,
+        category: formData.category,
+        purchase_date: formData.purchase_date,
+        cost: Number.parseFloat(formData.cost),
+        depreciation_rate: Number.parseFloat(formData.depreciation_rate),
+        lifetime_years: Number.parseInt(formData.lifetime_years),
+        description: formData.description,
+      }
+
+      if (editingAsset) {
+        await updateAsset(editingAsset.id, assetData)
+      } else {
+        await createAsset(assetData)
+      }
+
+      resetForm()
+    } catch (error) {
+      console.error('Failed to save asset:', error)
     }
-
-    newAsset.current_value = calculateCurrentValue(newAsset)
-
-    if (editingAsset) {
-      setAssets(assets.map((a) => (a.id === editingAsset.id ? newAsset : a)))
-    } else {
-      setAssets([...assets, newAsset])
-    }
-
-    resetForm()
   }
 
   const resetForm = () => {
@@ -218,14 +116,22 @@ export function AssetManagement() {
     setIsFormOpen(true)
   }
 
-  const handleDelete = (id: number) => {
-    setAssets(assets.filter((a) => a.id !== id))
+  const handleDelete = async (id: number) => {
+    if (confirm("Apakah Anda yakin ingin menghapus aset ini?")) {
+      try {
+        await deleteAsset(id)
+      } catch (error) {
+        console.error('Failed to delete asset:', error)
+      }
+    }
   }
 
-  const totalAssetValue = assets.reduce((sum, asset) => sum + (asset.current_value || 0), 0)
-  const totalDepreciation = assets.reduce((sum, asset) => sum + (asset.cost - (asset.current_value || 0)), 0)
+  // Use summary data from service or calculate from assets
+  const totalAssetValue = summary?.total_value || assets.reduce((sum, asset) => sum + (asset.current_value || 0), 0)
+  const totalDepreciation = summary?.total_depreciation || assets.reduce((sum, asset) => sum + (asset.cost - (asset.current_value || 0)), 0)
   const mostValuableAsset = assets.reduce((max, asset) =>
     (asset.current_value || 0) > (max.current_value || 0) ? asset : max,
+    assets[0] || { current_value: 0, name: '', category: '' }
   )
 
   return (
@@ -335,13 +241,15 @@ export function AssetManagement() {
                         <SelectValue placeholder="Pilih kategori" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Peralatan Cetak">Peralatan Cetak</SelectItem>
-                        <SelectItem value="Peralatan Konveksi">Peralatan Konveksi</SelectItem>
-                        <SelectItem value="Peralatan Komputer">Peralatan Komputer</SelectItem>
-                        <SelectItem value="Furniture Produksi">Furniture Produksi</SelectItem>
-                        <SelectItem value="Kendaraan">Kendaraan</SelectItem>
-                        <SelectItem value="Software">Software</SelectItem>
-                        <SelectItem value="Lainnya">Lainnya</SelectItem>
+                        {categoriesLoading ? (
+                          <SelectItem value="" disabled>Memuat kategori...</SelectItem>
+                        ) : (
+                          categories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -421,20 +329,29 @@ export function AssetManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama Aset</TableHead>
-                <TableHead>Kategori</TableHead>
-                <TableHead>Tanggal Beli</TableHead>
-                <TableHead className="text-right">Harga Asli</TableHead>
-                <TableHead className="text-right">Nilai Sekarang</TableHead>
-                <TableHead className="text-right">Depresiasi</TableHead>
-                <TableHead className="text-center">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assets.map((asset) => {
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-600">
+              <p>Gagal memuat data aset: {error}</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nama Aset</TableHead>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Tanggal Beli</TableHead>
+                  <TableHead className="text-right">Harga Asli</TableHead>
+                  <TableHead className="text-right">Nilai Sekarang</TableHead>
+                  <TableHead className="text-right">Depresiasi</TableHead>
+                  <TableHead className="text-center">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {assets.map((asset) => {
                 const currentValue = calculateCurrentValue(asset)
                 const depreciation = asset.cost - currentValue
                 const depreciationPercent = (depreciation / asset.cost) * 100
@@ -470,9 +387,10 @@ export function AssetManagement() {
                     </TableCell>
                   </TableRow>
                 )
-              })}
-            </TableBody>
-          </Table>
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -483,33 +401,38 @@ export function AssetManagement() {
           <CardDescription>Distribusi nilai aset berdasarkan kategori</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from(new Set(assets.map((a) => a.category))).map((category) => {
-              const categoryAssets = assets.filter((a) => a.category === category)
-              const categoryValue = categoryAssets.reduce((sum, a) => sum + (a.current_value || 0), 0)
-              const categoryCount = categoryAssets.length
-
-              return (
-                <div key={category} className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-semibold text-gray-900">{category}</h4>
+          {summaryLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(summary?.category_breakdown || Array.from(new Set(assets.map((a) => a.category))).map((category) => {
+                const categoryAssets = assets.filter((a) => a.category === category)
+                const categoryValue = categoryAssets.reduce((sum, a) => sum + (a.current_value || 0), 0)
+                const categoryCount = categoryAssets.length
+                return { category, count: categoryCount, value: categoryValue }
+              })).map((item) => (
+                <div key={item.category} className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-900">{item.category}</h4>
                   <div className="mt-2 space-y-1">
                     <div className="flex justify-between text-sm">
                       <span>Nilai Total:</span>
-                      <span className="font-medium">{formatIDR(categoryValue)}</span>
+                      <span className="font-medium">{formatIDR(item.value)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Jumlah Item:</span>
-                      <span className="font-medium">{categoryCount}</span>
+                      <span className="font-medium">{item.count}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Rata-rata Nilai:</span>
-                      <span className="font-medium">{formatIDR(categoryValue / categoryCount)}</span>
+                      <span className="font-medium">{formatIDR(item.value / item.count)}</span>
                     </div>
                   </div>
                 </div>
-              )
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

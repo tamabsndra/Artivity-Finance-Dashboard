@@ -19,7 +19,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { Employee, SalaryHistory } from "../types"
+import { useEmployees, useEmployeeSummary, useEmployeePositions } from "@/hooks/useEmployees"
+import type { Employee, SalaryHistory } from "@/types/financial"
 
 // Format currency to IDR
 const formatIDR = (amount: number) => {
@@ -32,79 +33,14 @@ const formatIDR = (amount: number) => {
 }
 
 export function EmployeeManagement() {
-  const [employees, setEmployees] = useState<Employee[]>([
-    {
-      id: 1,
-      name: "Budi Santoso",
-      position: "Creative Director & Owner",
-      type: "full-time",
-      current_salary: 12000000,
-    },
-    {
-      id: 2,
-      name: "Sari Dewi Lestari",
-      position: "Senior Graphic Designer",
-      type: "full-time",
-      current_salary: 7200000,
-    },
-    {
-      id: 3,
-      name: "Ahmad Rizki Pratama",
-      position: "Operator Mesin Cetak",
-      type: "full-time",
-      current_salary: 5800000,
-    },
-    {
-      id: 4,
-      name: "Maya Putri Salsabila",
-      position: "Marketing & Account Manager",
-      type: "full-time",
-      current_salary: 6500000,
-    },
-    {
-      id: 5,
-      name: "Doni Setiawan",
-      position: "Operator Konveksi",
-      type: "full-time",
-      current_salary: 5200000,
-    },
-    {
-      id: 6,
-      name: "Rina Handayani",
-      position: "Junior Designer",
-      type: "freelance",
-      current_salary: 4500000,
-    },
-    {
-      id: 7,
-      name: "Agus Wijaya",
-      position: "Driver & Helper",
-      type: "contract",
-      current_salary: 3800000,
-    },
-  ])
+  // Use hooks for data management
+  const { employees, loading, error, createEmployee, updateEmployee, deleteEmployee, updateSalary } = useEmployees({
+    page: 1,
+    limit: 50
+  })
 
-  const [salaryHistory, setSalaryHistory] = useState<SalaryHistory[]>([
-    // Budi Santoso - Creative Director
-    { id: 1, employee_id: 1, amount: 10000000, start_date: "2023-01-01", end_date: "2023-12-31" },
-    { id: 2, employee_id: 1, amount: 12000000, start_date: "2024-01-01", end_date: undefined },
-
-    // Sari Dewi - Senior Designer
-    { id: 3, employee_id: 2, amount: 6500000, start_date: "2023-06-01", end_date: "2024-02-29" },
-    { id: 4, employee_id: 2, amount: 7200000, start_date: "2024-03-01", end_date: undefined },
-
-    // Ahmad Rizki - Operator Cetak
-    { id: 5, employee_id: 3, amount: 5200000, start_date: "2023-03-01", end_date: "2024-01-31" },
-    { id: 6, employee_id: 3, amount: 5800000, start_date: "2024-02-01", end_date: undefined },
-
-    // Maya Putri - Marketing
-    { id: 7, employee_id: 4, amount: 6000000, start_date: "2023-08-01", end_date: "2024-02-29" },
-    { id: 8, employee_id: 4, amount: 6500000, start_date: "2024-03-01", end_date: undefined },
-
-    // Doni - Operator Konveksi
-    { id: 9, employee_id: 5, amount: 4800000, start_date: "2023-05-01", end_date: "2024-01-31" },
-    { id: 10, employee_id: 5, amount: 5200000, start_date: "2024-02-01", end_date: undefined },
-  ])
+  const { summary, loading: summaryLoading } = useEmployeeSummary()
+  const { positions, loading: positionsLoading } = useEmployeePositions()
 
   const [isEmployeeFormOpen, setIsEmployeeFormOpen] = useState(false)
   const [isSalaryFormOpen, setIsSalaryFormOpen] = useState(false)
@@ -122,52 +58,41 @@ export function EmployeeManagement() {
     start_date: "",
   })
 
-  const handleEmployeeSubmit = (e: React.FormEvent) => {
+  const handleEmployeeSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const newEmployee: Employee = {
-      id: editingEmployee?.id || Date.now(),
-      ...employeeForm,
-    }
+    try {
+      const employeeData = {
+        name: employeeForm.name,
+        position: employeeForm.position,
+        type: employeeForm.type,
+      }
 
-    if (editingEmployee) {
-      setEmployees(employees.map((emp) => (emp.id === editingEmployee.id ? newEmployee : emp)))
-    } else {
-      setEmployees([...employees, newEmployee])
-    }
+      if (editingEmployee) {
+        await updateEmployee(editingEmployee.id, employeeData)
+      } else {
+        await createEmployee(employeeData)
+      }
 
-    resetEmployeeForm()
+      resetEmployeeForm()
+    } catch (error) {
+      console.error('Failed to save employee:', error)
+    }
   }
 
-  const handleSalarySubmit = (e: React.FormEvent) => {
+  const handleSalarySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedEmployeeForSalary) return
 
-    // End current salary
-    const updatedHistory = salaryHistory.map((sh) =>
-      sh.employee_id === selectedEmployeeForSalary.id && !sh.end_date ? { ...sh, end_date: salaryForm.start_date } : sh,
-    )
+    try {
+      await updateSalary(selectedEmployeeForSalary.id, {
+        amount: Number.parseFloat(salaryForm.amount),
+        start_date: salaryForm.start_date,
+      })
 
-    // Add new salary record
-    const newSalaryRecord: SalaryHistory = {
-      id: Date.now(),
-      employee_id: selectedEmployeeForSalary.id,
-      amount: Number.parseFloat(salaryForm.amount),
-      start_date: salaryForm.start_date,
-      end_date: undefined,
+      resetSalaryForm()
+    } catch (error) {
+      console.error('Failed to update salary:', error)
     }
-
-    setSalaryHistory([...updatedHistory, newSalaryRecord])
-
-    // Update employee current salary
-    setEmployees(
-      employees.map((emp) =>
-        emp.id === selectedEmployeeForSalary.id
-          ? { ...emp, current_salary: Number.parseFloat(salaryForm.amount) }
-          : emp,
-      ),
-    )
-
-    resetSalaryForm()
   }
 
   const resetEmployeeForm = () => {
@@ -192,9 +117,14 @@ export function EmployeeManagement() {
     setIsEmployeeFormOpen(true)
   }
 
-  const handleDeleteEmployee = (id: number) => {
-    setEmployees(employees.filter((emp) => emp.id !== id))
-    setSalaryHistory(salaryHistory.filter((sh) => sh.employee_id !== id))
+  const handleDeleteEmployee = async (id: number) => {
+    if (confirm("Apakah Anda yakin ingin menghapus karyawan ini?")) {
+      try {
+        await deleteEmployee(id)
+      } catch (error) {
+        console.error('Failed to delete employee:', error)
+      }
+    }
   }
 
   const handleUpdateSalary = (employee: Employee) => {
@@ -206,11 +136,13 @@ export function EmployeeManagement() {
     setIsSalaryFormOpen(true)
   }
 
-  const totalMonthlyPayroll = employees.reduce((sum, emp) => sum + (emp.current_salary || 0), 0)
-  const averageSalary = totalMonthlyPayroll / employees.length
-  const fullTimeCount = employees.filter((emp) => emp.type === "full-time").length
+  // Use summary data from service or calculate from employees
+  const totalMonthlyPayroll = summary?.total_monthly_payroll || employees.reduce((sum, emp) => sum + (emp.current_salary || 0), 0)
+  const averageSalary = summary?.average_salary || (employees.length > 0 ? totalMonthlyPayroll / employees.length : 0)
+  const fullTimeCount = summary?.full_time_count || employees.filter((emp) => emp.type === "full-time").length
   const highestPaidEmployee = employees.reduce((max, emp) =>
     (emp.current_salary || 0) > (max.current_salary || 0) ? emp : max,
+    employees[0] || { current_salary: 0, name: '', position: '' }
   )
 
   // Mock productivity data
@@ -341,13 +273,25 @@ export function EmployeeManagement() {
 
                     <div>
                       <Label htmlFor="position">Posisi</Label>
-                      <Input
-                        id="position"
+                      <Select
                         value={employeeForm.position}
-                        onChange={(e) => setEmployeeForm({ ...employeeForm, position: e.target.value })}
-                        placeholder="mis: Desainer Grafis"
-                        required
-                      />
+                        onValueChange={(value) => setEmployeeForm({ ...employeeForm, position: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih posisi" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {positionsLoading ? (
+                            <SelectItem value="" disabled>Memuat posisi...</SelectItem>
+                          ) : (
+                            positions.map((position) => (
+                              <SelectItem key={position} value={position}>
+                                {position}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
@@ -382,19 +326,28 @@ export function EmployeeManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Posisi</TableHead>
-                <TableHead>Jenis</TableHead>
-                <TableHead className="text-right">Gaji Saat Ini</TableHead>
-                <TableHead className="text-center">Produktivitas</TableHead>
-                <TableHead className="text-center">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {employees.map((employee, index) => {
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-600">
+              <p>Gagal memuat data karyawan: {error}</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Posisi</TableHead>
+                  <TableHead>Jenis</TableHead>
+                  <TableHead className="text-right">Gaji Saat Ini</TableHead>
+                  <TableHead className="text-center">Produktivitas</TableHead>
+                  <TableHead className="text-center">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {employees.map((employee, index) => {
                 const productivity = productivityData.find((p) => p.id === employee.id)?.productivity || 85
                 const isTopPerformer = productivity >= 95
 
@@ -444,9 +397,10 @@ export function EmployeeManagement() {
                     </TableCell>
                   </TableRow>
                 )
-              })}
-            </TableBody>
-          </Table>
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 

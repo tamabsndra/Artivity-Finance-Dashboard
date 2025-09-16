@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useTransactions, useTransactionSummary } from "@/hooks/useTransactions"
 import {
   LineChart,
   Line,
@@ -72,7 +73,6 @@ interface Transaction {
   created_at: string
   updated_at: string
   is_locked?: boolean
-  is_biggest?: boolean
 }
 
 interface TransactionTemplate {
@@ -111,199 +111,26 @@ export function EnhancedTransactionManagement() {
   const [isRecording, setIsRecording] = useState(false)
   const [voiceText, setVoiceText] = useState("")
   const [showAutoSuggestions, setShowAutoSuggestions] = useState(false)
-  const [monthlyTarget, setMonthlyTarget] = useState(25000000) // Target bulanan: Rp 25.000.000
+  const [monthlyTarget, setMonthlyTarget] = useState(75000000) // Target bulanan: Rp 75.000.000
 
-  // Enhanced transaction data with new fields - Localized to Bahasa Indonesia
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    // Today's transactions
-    {
-      id: 1,
-      type: "income",
-      method: "sales",
-      category_id: 1,
-      tag_id: 1,
-      amount: 7500000,
-      description: "DP branding restoran seafood",
-      notes: "Pelanggan bayar 50% dari total Rp 15 juta",
-      receipt_url: "/receipts/receipt-001.jpg",
-      date: new Date().toISOString().split("T")[0],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_locked: false,
-      is_biggest: true,
-    },
-    {
-      id: 2,
-      type: "expense",
-      method: "opex",
-      category_id: 4,
-      tag_id: 2,
-      amount: 1200000,
-      description: "Beli kertas art paper 150gsm",
-      notes: "Untuk proyek brosur dan katalog, stok 2 minggu",
-      date: new Date().toISOString().split("T")[0],
-      created_at: new Date(new Date().setHours(new Date().getHours() - 2)).toISOString(),
-      updated_at: new Date(new Date().setHours(new Date().getHours() - 2)).toISOString(),
-      is_locked: false,
-      is_biggest: false,
-    },
-    {
-      id: 3,
-      type: "income",
-      method: "sales",
-      category_id: 2,
-      tag_id: 4,
-      amount: 3200000,
-      description: "Cetak banner promosi grand opening",
-      notes: "Banner 4x6m, bahan flexi korea, 3 pcs",
-      date: new Date().toISOString().split("T")[0],
-      created_at: new Date(new Date().setHours(new Date().getHours() - 3)).toISOString(),
-      updated_at: new Date(new Date().setHours(new Date().getHours() - 3)).toISOString(),
-      is_locked: false,
-      is_biggest: false,
-    },
-    {
-      id: 4,
-      type: "expense",
-      method: "opex",
-      category_id: 7,
-      tag_id: 3,
-      amount: 450000,
-      description: "Bayar token listrik",
-      notes: "Token listrik untuk workshop produksi",
-      date: new Date().toISOString().split("T")[0],
-      created_at: new Date(new Date().setHours(new Date().getHours() - 4)).toISOString(),
-      updated_at: new Date(new Date().setHours(new Date().getHours() - 4)).toISOString(),
-      is_locked: false,
-      is_biggest: false,
-    },
-    {
-      id: 5,
-      type: "income",
-      method: "sales",
-      category_id: 3,
-      tag_id: 5,
-      amount: 4800000,
-      description: "Pelunasan kaos polo komunitas",
-      notes: "50 pcs kaos polo, sablon 2 warna + bordir",
-      date: new Date().toISOString().split("T")[0],
-      created_at: new Date(new Date().setHours(new Date().getHours() - 5)).toISOString(),
-      updated_at: new Date(new Date().setHours(new Date().getHours() - 5)).toISOString(),
-      is_locked: false,
-      is_biggest: false,
-    },
+  // Use transaction hooks
+  const { transactions, loading, error, createTransaction, updateTransaction, deleteTransaction } = useTransactions({
+    page: 1,
+    limit: 100,
+    search: searchTerm,
+    type: selectedCategory === "all" ? undefined : (selectedCategory === "income" ? "income" : "expense"),
+    method: filterMethod === "all" ? undefined : filterMethod as "sales" | "capex" | "opex"
+  })
 
-    // Yesterday's transactions
-    {
-      id: 6,
-      type: "income",
-      method: "sales",
-      category_id: 1,
-      tag_id: 4,
-      amount: 12000000,
-      description: "Paket branding UMKM makanan",
-      notes: "Logo, kemasan, banner, kartu nama, stiker",
-      date: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split("T")[0],
-      created_at: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-      updated_at: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-      is_locked: true,
-      is_biggest: true,
-    },
-    {
-      id: 7,
-      type: "expense",
-      method: "opex",
-      category_id: 6,
-      tag_id: 6,
-      amount: 800000,
-      description: "Boost post Instagram",
-      notes: "Promosi portfolio branding UMKM",
-      date: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split("T")[0],
-      created_at: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-      updated_at: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-      is_locked: true,
-      is_biggest: false,
-    },
-    {
-      id: 8,
-      type: "expense",
-      method: "opex",
-      category_id: 4,
-      tag_id: 2,
-      amount: 2500000,
-      description: "Beli kain cotton combed 30s",
-      notes: "Untuk produksi kaos komunitas dan seragam",
-      date: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split("T")[0],
-      created_at: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-      updated_at: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-      is_locked: true,
-      is_biggest: false,
-    },
+  const { summary, loading: summaryLoading } = useTransactionSummary({
+    page: 1,
+    limit: 100,
+    search: searchTerm,
+    type: selectedCategory === "all" ? undefined : (selectedCategory === "income" ? "income" : "expense"),
+    method: filterMethod === "all" ? undefined : filterMethod as "sales" | "capex" | "opex"
+  })
 
-    // Day before yesterday
-    {
-      id: 9,
-      type: "expense",
-      method: "capex",
-      category_id: 5,
-      tag_id: 2,
-      amount: 6500000,
-      description: "Service mesin cutting sticker",
-      notes: "Ganti blade dan kalibrasi mesin Cameo 4",
-      date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString().split("T")[0],
-      created_at: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
-      updated_at: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
-      is_locked: true,
-      is_biggest: true,
-    },
-    {
-      id: 10,
-      type: "income",
-      method: "sales",
-      category_id: 2,
-      tag_id: 1,
-      amount: 5500000,
-      description: "Cetak undangan pernikahan premium",
-      notes: "300 pcs undangan dengan emboss dan foil",
-      date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString().split("T")[0],
-      created_at: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
-      updated_at: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
-      is_locked: true,
-      is_biggest: false,
-    },
-
-    // Weekly transactions for better insights
-    {
-      id: 11,
-      type: "expense",
-      method: "opex",
-      category_id: 8,
-      tag_id: 7,
-      amount: 33200000,
-      description: "Gaji karyawan bulan Maret",
-      notes: "5 karyawan tetap + 2 freelancer",
-      date: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString().split("T")[0],
-      created_at: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
-      updated_at: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
-      is_locked: true,
-      is_biggest: true,
-    },
-    {
-      id: 12,
-      type: "income",
-      method: "sales",
-      category_id: 1,
-      tag_id: 1,
-      amount: 18000000,
-      description: "Branding lengkap PT Teknologi Maju",
-      notes: "Logo, website, merchandise, seragam",
-      date: new Date(new Date().setDate(new Date().getDate() - 4)).toISOString().split("T")[0],
-      created_at: new Date(new Date().setDate(new Date().getDate() - 4)).toISOString(),
-      updated_at: new Date(new Date().setDate(new Date().getDate() - 4)).toISOString(),
-      is_locked: true,
-      is_biggest: true,
-    },
-  ])
+  // Transaction templates for recurring entries - Localized to Bahasa Indonesia
 
   // Transaction templates for recurring entries - Localized to Bahasa Indonesia
   const [templates, setTemplates] = useState<TransactionTemplate[]>([
@@ -480,33 +307,6 @@ export function EnhancedTransactionManagement() {
     }
   }, [filterPeriod])
 
-  // Mark biggest transaction of the day
-  useEffect(() => {
-    const updatedTransactions = [...transactions]
-    const dates = [...new Set(updatedTransactions.map((t) => t.date))]
-
-    dates.forEach((date) => {
-      const dayTransactions = updatedTransactions.filter((t) => t.date === date)
-      let biggestAmount = 0
-      let biggestId = 0
-
-      dayTransactions.forEach((t) => {
-        t.is_biggest = false
-        if (t.amount > biggestAmount) {
-          biggestAmount = t.amount
-          biggestId = t.id
-        }
-      })
-
-      const biggestIndex = updatedTransactions.findIndex((t) => t.id === biggestId)
-      if (biggestIndex !== -1) {
-        updatedTransactions[biggestIndex].is_biggest = true
-      }
-    })
-
-    setTransactions(updatedTransactions)
-  }, [])
-
   // Toggle dark mode
   useEffect(() => {
     if (isDarkMode) {
@@ -620,18 +420,24 @@ export function EnhancedTransactionManagement() {
     }
   }
 
-  // Get today's summary
-  const todaySummary = getDailySummary(new Date().toISOString().split("T")[0])
+  // Get today's summary from service or calculate
+  const todaySummary = summary ? {
+    date: new Date().toISOString().split("T")[0],
+    totalIncome: summary.total_income,
+    totalExpense: summary.total_expense,
+    netCashFlow: summary.net_income,
+    transactionCount: transactions.length
+  } : getDailySummary(new Date().toISOString().split("T")[0])
 
-  // Get monthly insights
+  // Get monthly insights from service or calculate
   const getMonthlyInsights = () => {
     const today = new Date()
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
     const monthStartStr = monthStart.toISOString().split("T")[0]
 
     const monthTransactions = transactions.filter((t) => t.date >= monthStartStr)
-    const totalIncome = monthTransactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0)
-    const totalExpense = monthTransactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0)
+    const totalIncome = summary?.total_income || monthTransactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0)
+    const totalExpense = summary?.total_expense || monthTransactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0)
 
     // Category breakdown
     const categoryBreakdown = categories.map((cat) => {
@@ -669,7 +475,7 @@ export function EnhancedTransactionManagement() {
     return {
       totalIncome,
       totalExpense,
-      netCashFlow: totalIncome - totalExpense,
+      netCashFlow: summary?.net_income || totalIncome - totalExpense,
       categoryBreakdown: categoryBreakdown.filter((cat) => cat.total > 0),
       highestSpendingDay,
       mostUsedCategory,
@@ -691,9 +497,9 @@ export function EnhancedTransactionManagement() {
   const salesTotal = filteredTransactions.filter((t) => t.method === "sales").reduce((sum, t) => sum + t.amount, 0)
 
   // Handle quick entry submission
-  const handleQuickEntrySubmit = () => {
-    const newTransaction: Transaction = {
-      id: Date.now(),
+  const handleQuickEntrySubmit = async () => {
+    try {
+      const transactionData = {
       type: quickEntry.type,
       method: quickEntry.method,
       category_id: quickEntry.category_id,
@@ -702,26 +508,9 @@ export function EnhancedTransactionManagement() {
       description: quickEntry.description,
       notes: quickEntry.notes,
       date: quickEntry.date,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_locked: false,
-      is_biggest: false,
-    }
+      }
 
-    // Check if this is the biggest transaction of the day
-    const dayTransactions = transactions.filter((t) => t.date === quickEntry.date)
-    const currentBiggest = dayTransactions.reduce((max, t) => (t.amount > max ? t.amount : max), 0)
-
-    if (Number.parseFloat(quickEntry.amount) > currentBiggest) {
-      newTransaction.is_biggest = true
-      // Reset other transactions' biggest flag for this day
-      const updatedTransactions = transactions.map((t) =>
-        t.date === quickEntry.date ? { ...t, is_biggest: false } : t,
-      )
-      setTransactions([...updatedTransactions, newTransaction])
-    } else {
-      setTransactions([...transactions, newTransaction])
-    }
+      await createTransaction(transactionData)
 
     setQuickEntry({
       type: "income",
@@ -743,6 +532,9 @@ export function EnhancedTransactionManagement() {
         origin: { y: 0.6 },
         colors: ["#4ade80", "#3b82f6", "#8b5cf6"],
       })
+      }
+    } catch (error) {
+      console.error('Failed to create transaction:', error)
     }
   }
 
@@ -1361,7 +1153,15 @@ export function EnhancedTransactionManagement() {
                                     key={transaction.id}
                                     className={`
                                       ${transaction.is_locked ? "opacity-60" : ""}
-                                      ${transaction.is_biggest ? "bg-amber-50/50 dark:bg-amber-900/20" : ""}
+                                      ${(() => {
+                                        // Find the biggest transaction for this date
+                                        const dayTransactions = filteredTransactions.filter(t => t.date === transaction.date);
+                                        const biggestTransaction = dayTransactions.reduce((max, t) => 
+                                          (t.amount > max.amount ? t : max), 
+                                          dayTransactions[0]
+                                        );
+                                        return transaction.id === biggestTransaction?.id ? "bg-amber-50/50 dark:bg-amber-900/20" : "";
+                                      })()}
                                     `}
                                   >
                                     <TableCell className="font-mono text-sm">
@@ -1375,24 +1175,34 @@ export function EnhancedTransactionManagement() {
                                         {transaction.receipt_url && <Camera className="w-4 h-4 text-blue-500" />}
                                         <span className="font-medium">{transaction.description}</span>
                                         {transaction.is_locked && <Lock className="w-4 h-4 text-gray-400" />}
-                                        {transaction.is_biggest && (
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Badge
-                                                  variant="outline"
-                                                  className="ml-1 bg-amber-100 dark:bg-amber-900 border-amber-200 dark:border-amber-800"
-                                                >
-                                                  <Sparkles className="w-3 h-3 text-amber-500 mr-1" />
-                                                  Terbesar
-                                                </Badge>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <p>Transaksi terbesar hari ini</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        )}
+                                        {(() => {
+                                          // Find the biggest transaction for this date
+                                          const dayTransactions = filteredTransactions.filter(t => t.date === transaction.date);
+                                          const biggestTransaction = dayTransactions.reduce((max, t) => 
+                                            (t.amount > max.amount ? t : max), 
+                                            dayTransactions[0]
+                                          );
+                                          const isBiggest = transaction.id === biggestTransaction?.id;
+                                          
+                                          return isBiggest ? (
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="ml-1 bg-amber-100 dark:bg-amber-900 border-amber-200 dark:border-amber-800"
+                                                  >
+                                                    <Sparkles className="w-3 h-3 text-amber-500 mr-1" />
+                                                    Terbesar
+                                                  </Badge>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>Transaksi terbesar hari ini</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                          ) : null;
+                                        })()}
                                       </div>
                                     </TableCell>
                                     <TableCell>

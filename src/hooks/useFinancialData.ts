@@ -6,7 +6,7 @@ import {
     ValuationInputs,
     FinancialRatios,
     DuPontAnalysis
-} from '@/types/entities'
+} from '@/types/financial'
 import { mockFinancialPerformance, mockBalanceSheet, mockCashConversionData, mockValuationInputs, mockFinancialRatios, mockDuPontAnalysis } from '@/services/mock/mockData'
 
 interface UseFinancialPerformanceReturn {
@@ -248,5 +248,24 @@ export function useDuPontAnalysis(): UseDuPontAnalysisReturn {
         loading,
         error,
         refetch: fetchData,
+    }
+}
+
+// Export a combined hook for backward compatibility
+export function useFinancialData() {
+    const financialPerformance = useFinancialPerformance()
+    const balanceSheet = useBalanceSheet()
+    const cashConversion = useCashConversion()
+    const valuationInputs = useValuationInputs()
+    const financialRatios = useFinancialRatios()
+    const dupontAnalysis = useDuPontAnalysis()
+    
+    return {
+        financialPerformance,
+        balanceSheet,
+        cashConversion,
+        valuationInputs,
+        financialRatios,
+        dupontAnalysis
     }
 }

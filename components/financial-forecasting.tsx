@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
+import { useFinancialData } from "@/hooks/useFinancialData"
 import {
   LineChart as RechartsLineChart,
   Line,
@@ -47,14 +48,17 @@ interface ForecastParams {
 }
 
 export function FinancialForecasting() {
-  // Historical data - in a real app, this would come from your database
+  // Use financial data from service
+  const { data: financialPerformance, loading: financialLoading } = useFinancialData()
+
+  // Historical data for Artivity Printing Company
   const historicalData = [
-    { period: "Jan 2024", revenue: 38000, expense: 28000, profit: 10000 },
-    { period: "Feb 2024", revenue: 42000, expense: 31000, profit: 11000 },
-    { period: "Mar 2024", revenue: 45750, expense: 32100, profit: 13650 },
-    { period: "Apr 2024", revenue: 41000, expense: 29500, profit: 11500 },
-    { period: "May 2024", revenue: 48000, expense: 34000, profit: 14000 },
-    { period: "Jun 2024", revenue: 52000, expense: 36500, profit: 15500 },
+    { period: "Jan 2024", revenue: 38000000, expense: 28000000, profit: 10000000 },
+    { period: "Feb 2024", revenue: 42000000, expense: 31000000, profit: 11000000 },
+    { period: "Mar 2024", revenue: 45750000, expense: 32100000, profit: 13650000 },
+    { period: "Apr 2024", revenue: 41000000, expense: 29500000, profit: 11500000 },
+    { period: "May 2024", revenue: 48000000, expense: 34000000, profit: 14000000 },
+    { period: "Jun 2024", revenue: 52000000, expense: 36500000, profit: 15500000 },
   ]
 
   const [forecastParams, setForecastParams] = useState<ForecastParams>({
@@ -99,10 +103,11 @@ export function FinancialForecasting() {
       })
     }
 
-    // Generate forecast data
-    const lastHistorical = historicalData[historicalData.length - 1]
-    let lastRevenue = lastHistorical.revenue
-    let lastExpense = lastHistorical.expense
+    // Generate forecast data using current financial performance
+    const currentRevenue = financialPerformance?.total_revenue || historicalData[historicalData.length - 1].revenue
+    const currentExpense = financialPerformance?.total_expenses || historicalData[historicalData.length - 1].expense
+    let lastRevenue = currentRevenue
+    let lastExpense = currentExpense
 
     // Seasonal factors (simplified)
     const seasonalFactors = [1.0, 0.9, 1.1, 1.0, 0.95, 1.15, 1.2, 0.85, 0.9, 1.05, 1.1, 0.95]

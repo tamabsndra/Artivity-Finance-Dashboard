@@ -9,13 +9,17 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FinancialCalculator } from "./financial-calculations"
-import type { ValuationInputs } from "../types/financial"
+import { useFinancialData } from "@/hooks/useFinancialData"
+import type { ValuationInputs } from "@/types/financial"
 
 export function ValuationReadiness() {
+  // Use financial data from service
+  const { data: financialPerformance, loading: financialLoading } = useFinancialData()
+
   const [inputs, setInputs] = useState<ValuationInputs>({
-    market_cap: 150000,
-    total_debt: 30000,
-    cash_equivalents: 15000,
+    market_cap: financialPerformance?.total_assets || 150000000,
+    total_debt: financialPerformance?.total_liabilities || 30000000,
+    cash_equivalents: financialPerformance?.cash_flow || 15000000,
     tax_rate: 25,
     cost_of_equity: 12,
     cost_of_debt: 6,

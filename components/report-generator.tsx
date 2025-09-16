@@ -30,6 +30,10 @@ import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useFinancialData } from "@/hooks/useFinancialData"
+import { useTransactions } from "@/hooks/useTransactions"
+import { useAssets } from "@/hooks/useAssets"
+import { useEmployees } from "@/hooks/useEmployees"
 import { Textarea } from "@/components/ui/textarea"
 import {
   DropdownMenu,
@@ -230,6 +234,12 @@ export function ReportGenerator() {
       selected: false,
     },
   ]
+
+  // Use data hooks for report generation
+  const { data: financialData, loading: financialLoading } = useFinancialData()
+  const { transactions, loading: transactionsLoading } = useTransactions({ page: 1, limit: 100 })
+  const { assets, loading: assetsLoading } = useAssets({ page: 1, limit: 100 })
+  const { employees, loading: employeesLoading } = useEmployees({ page: 1, limit: 100 })
 
   const [selectedTemplate, setSelectedTemplate] = useState<ReportTemplate>(reportTemplates[0])
   const [selectedSections, setSelectedSections] = useState<ReportSection[]>(

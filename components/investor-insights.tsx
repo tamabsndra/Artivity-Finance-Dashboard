@@ -7,37 +7,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { FinancialCalculator } from "./financial-calculations"
-import type { FinancialPerformance, BalanceSheetSnapshot, CashConversionData } from "../types/financial"
+import { useFinancialData } from "@/hooks/useFinancialData"
+import type { FinancialPerformance, BalanceSheetSnapshot, CashConversionData } from "@/types/financial"
 
 export function InvestorInsights() {
-  // Mock financial data - in real implementation, this would come from your database
-  const [financialData] = useState<FinancialPerformance>({
+  // Use financial data from service
+  const { data: financialPerformance, loading: financialLoading } = useFinancialData()
+
+  // Fallback financial data for Artivity Printing Company
+  const financialData = financialPerformance || {
     period: "2024-Q1",
-    net_income: 13650,
-    total_assets: 125000,
-    total_equity: 85000,
-    operating_income: 18500,
-    ebitda: 22800,
-    revenue: 45750,
-    gross_profit: 28500,
-    interest_expense: 1200,
-    tax_expense: 3650,
-    depreciation_amortization: 4300,
-  })
+    net_income: 13650000,
+    total_assets: 125000000,
+    total_equity: 85000000,
+    operating_income: 18500000,
+    ebitda: 22800000,
+    revenue: 45750000,
+    gross_profit: 28500000,
+    interest_expense: 1200000,
+    tax_expense: 3650000,
+    depreciation_amortization: 4300000,
+  }
 
   const [balanceData] = useState<BalanceSheetSnapshot>({
     period: "2024-Q1",
-    current_assets: 45000,
-    current_liabilities: 18000,
-    total_assets: 125000,
-    total_liabilities: 40000,
-    total_equity: 85000,
-    cash_equivalents: 15000,
-    inventory: 8500,
-    accounts_receivable: 12000,
-    accounts_payable: 6500,
-    short_term_debt: 5000,
-    long_term_debt: 25000,
+    current_assets: 45000000,
+    current_liabilities: 18000000,
+    total_assets: 125000000,
+    total_liabilities: 40000000,
+    total_equity: 85000000,
+    cash_equivalents: 15000000,
+    inventory: 8500000,
+    accounts_receivable: 12000000,
+    accounts_payable: 6500000,
+    short_term_debt: 5000000,
+    long_term_debt: 25000000,
   })
 
   const [cccData] = useState<CashConversionData>({

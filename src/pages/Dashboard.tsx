@@ -13,65 +13,53 @@ import {
   BarChart3,
   PieChart,
   Calculator,
-  FileText
+  FileText,
+  Plus
 } from "lucide-react"
 
 import { TransactionList } from "@/components/features/TransactionList"
 import { useFinancialData } from "@/hooks/useFinancialData"
+import { useTransactions } from "@/hooks/useTransactions"
 import { formatCurrency, formatPercentage } from "@/utils/formatters"
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview")
 
-  const { data: financialPerformance } = useFinancialData()
+  // Fetch financial data
+  const { data: financialPerformance, loading: financialLoading } = useFinancialData()
   const { data: balanceSheet } = useFinancialData()
   const { data: financialRatios } = useFinancialData()
 
-  // Mock dashboard metrics
-  const dashboardMetrics = {
-    totalRevenue: 95000,
-    totalExpenses: 63000,
-    netIncome: 32000,
-    profitMargin: 33.7,
-    growthRate: 15.2,
-    cashFlow: 35000,
-    assetsValue: 800000,
-    liabilitiesValue: 260000,
-    equityValue: 540000,
-  }
+  // Fetch recent transactions
+  const { transactions: recentTransactions, loading: transactionsLoading } = useTransactions({
+    page: 1,
+    limit: 5,
+    search: "",
+    type: undefined,
+    method: undefined,
+  })
 
-  const recentTransactions = [
-    {
-      id: 1,
-      description: "Mobile app subscription revenue",
-      amount: 15000,
-      type: "income",
-      date: "2024-03-01"
-    },
-    {
-      id: 2,
-      description: "Google Ads campaign",
-      amount: 5000,
-      type: "expense",
-      date: "2024-03-02"
-    },
-    {
-      id: 3,
-      description: "Monthly salaries",
-      amount: 12000,
-      type: "expense",
-      date: "2024-03-05"
-    }
-  ]
+  // Calculate dashboard metrics from real data
+  const dashboardMetrics = {
+    totalRevenue: financialPerformance?.total_revenue || 0,
+    totalExpenses: financialPerformance?.total_expenses || 0,
+    netIncome: financialPerformance?.net_income || 0,
+    profitMargin: financialPerformance?.profit_margin || 0,
+    growthRate: financialPerformance?.growth_rate || 0,
+    cashFlow: financialPerformance?.cash_flow || 0,
+    assetsValue: balanceSheet?.total_assets || 0,
+    liabilitiesValue: balanceSheet?.total_liabilities || 0,
+    equityValue: balanceSheet?.total_equity || 0,
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard Artivity</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard Artivity Printing</h1>
           <p className="text-gray-600 mt-2">
-            Platform manajemen keuangan dan analitik yang komprehensif
+            Platform manajemen keuangan dan analitik untuk perusahaan percetakan
           </p>
         </div>
 
@@ -83,13 +71,22 @@ export default function Dashboard() {
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(dashboardMetrics.totalRevenue)}
-              </div>
-              <p className="text-xs text-green-600 flex items-center mt-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +{formatPercentage(dashboardMetrics.growthRate)} dari bulan lalu
-              </p>
+              {financialLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrency(dashboardMetrics.totalRevenue)}
+                  </div>
+                  <p className="text-xs text-green-600 flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    +{formatPercentage(dashboardMetrics.growthRate)} dari bulan lalu
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -99,13 +96,22 @@ export default function Dashboard() {
               <TrendingUp className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(dashboardMetrics.netIncome)}
-              </div>
-              <p className="text-xs text-blue-600 flex items-center mt-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                {formatPercentage(dashboardMetrics.profitMargin)} margin keuntungan
-              </p>
+              {financialLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(dashboardMetrics.netIncome)}
+                  </div>
+                  <p className="text-xs text-blue-600 flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    {formatPercentage(dashboardMetrics.profitMargin)} margin keuntungan
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -115,12 +121,21 @@ export default function Dashboard() {
               <Building2 className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {formatCurrency(dashboardMetrics.assetsValue)}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {formatCurrency(dashboardMetrics.equityValue)} ekuitas
-              </p>
+              {financialLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(dashboardMetrics.assetsValue)}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formatCurrency(dashboardMetrics.equityValue)} ekuitas
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -130,13 +145,22 @@ export default function Dashboard() {
               <BarChart3 className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                {formatCurrency(dashboardMetrics.cashFlow)}
-              </div>
-              <p className="text-xs text-orange-600 flex items-center mt-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                Arus kas positif
-              </p>
+              {financialLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {formatCurrency(dashboardMetrics.cashFlow)}
+                  </div>
+                  <p className="text-xs text-orange-600 flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    Arus kas positif
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -165,24 +189,36 @@ export default function Dashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentTransactions.map((transaction) => (
-                      <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{transaction.description}</p>
-                          <p className="text-sm text-gray-500">{transaction.date}</p>
+                  {transactionsLoading ? (
+                    <div className="flex items-center justify-center h-32">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentTransactions && recentTransactions.length > 0 ? (
+                        recentTransactions.map((transaction) => (
+                          <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div>
+                              <p className="font-medium">{transaction.description}</p>
+                              <p className="text-sm text-gray-500">{transaction.date}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className={`font-bold ${
+                                transaction.type === "income" ? "text-green-600" : "text-red-600"
+                              }`}>
+                                {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
+                              </p>
+                              <p className="text-xs text-gray-500">{transaction.type}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <p>Tidak ada transaksi terbaru</p>
                         </div>
-                        <div className="text-right">
-                          <p className={`font-bold ${
-                            transaction.type === "income" ? "text-green-600" : "text-red-600"
-                          }`}>
-                            {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
-                          </p>
-                          <p className="text-xs text-gray-500">{transaction.type}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                    </div>
+                  )}
                   <Button className="w-full mt-4" variant="outline">
                     Lihat Semua Transaksi
                   </Button>
@@ -204,19 +240,27 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Rasio Lancar</span>
-                      <span className="font-bold text-green-600">3.0</span>
+                      <span className="font-bold text-green-600">
+                        {financialRatios?.current_ratio ? financialRatios.current_ratio.toFixed(1) : "N/A"}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Debt-to-Equity</span>
-                      <span className="font-bold text-blue-600">0.48</span>
+                      <span className="font-bold text-blue-600">
+                        {financialRatios?.debt_to_equity ? financialRatios.debt_to_equity.toFixed(2) : "N/A"}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">ROE</span>
-                      <span className="font-bold text-purple-600">5.9%</span>
+                      <span className="font-bold text-purple-600">
+                        {financialRatios?.roe ? formatPercentage(financialRatios.roe) : "N/A"}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Margin Kotor</span>
-                      <span className="font-bold text-orange-600">73.7%</span>
+                      <span className="font-bold text-orange-600">
+                        {financialRatios?.gross_margin ? formatPercentage(financialRatios.gross_margin) : "N/A"}
+                      </span>
                     </div>
                   </div>
                   <Button className="w-full mt-4" variant="outline">

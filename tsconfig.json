@@ -22,6 +22,7 @@
       "@/*": ["./*"],
       "@/src/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
+      "@/components/ui/*": ["./components/ui/*"],
       "@/hooks/*": ["./src/hooks/*"],
       "@/services/*": ["./src/services/*"],
       "@/types/*": ["./src/types/*"],

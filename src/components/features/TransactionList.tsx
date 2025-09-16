@@ -63,11 +63,11 @@ export function TransactionList({ onAddTransaction, onEditTransaction }: Transac
   }
 
   const handleDeleteTransaction = async (id: number) => {
-    if (confirm("Are you sure you want to delete this transaction?")) {
+    if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
       try {
         await deleteTransaction(id)
       } catch (error) {
-        console.error("Failed to delete transaction:", error)
+        console.error("Gagal menghapus transaksi:", error)
       }
     }
   }
@@ -166,7 +166,7 @@ export function TransactionList({ onAddTransaction, onEditTransaction }: Transac
             <div className="flex gap-2">
               <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
-                Export
+                Ekspor
               </Button>
               <Button onClick={onAddTransaction} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
@@ -190,7 +190,7 @@ export function TransactionList({ onAddTransaction, onEditTransaction }: Transac
             </div>
             <Select value={filters.type || "all"} onValueChange={handleTypeFilter}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Type" />
+                <SelectValue placeholder="Jenis" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Jenis</SelectItem>
@@ -200,7 +200,7 @@ export function TransactionList({ onAddTransaction, onEditTransaction }: Transac
             </Select>
             <Select value={filters.method || "all"} onValueChange={handleMethodFilter}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Method" />
+                <SelectValue placeholder="Metode" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Metode</SelectItem>
@@ -255,7 +255,7 @@ export function TransactionList({ onAddTransaction, onEditTransaction }: Transac
                           size="sm"
                           onClick={() => onEditTransaction?.(transaction)}
                         >
-                          Edit
+                          Ubah
                         </Button>
                         <Button
                           variant="ghost"
